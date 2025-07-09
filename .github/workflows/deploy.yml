@@ -61,12 +61,31 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      # - name: Terraform Plan
+      #   id: tfplan
+      #   run: |
+      #     terraform plan -var-file="terraform.tfvars" -out=tfplan.out
+      #     echo "plan_created=true" >> $GITHUB_OUTPUT
+
+      # - name: Setup Infracost
+      #   uses: infracost/actions/setup@v2.1.0
+      #   with:
+      #     api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      # - name: Run Infracost Breakdown
+      #   run: |
+      #     infracost breakdown \
+      #     --path=. \
+      #     --terraform-plan-file=tfplan.out \
+      #     --format=json \
+      #     --out-file=infracost-report.json
       - name: Terraform Plan
         id: tfplan
         run: |
-          terraform plan -var-file="terraform.tfvars" -out=tfplan.out
+          terraform plan -var-file="terraform.tfvars" -out=tfplan.binary
+          terraform show -json tfplan.binary > plan.json
           echo "plan_created=true" >> $GITHUB_OUTPUT
-
+      
       - name: Setup Infracost
         uses: infracost/actions/setup@v2.1.0
         with:
@@ -75,8 +94,7 @@ jobs:
       - name: Run Infracost Breakdown
         run: |
           infracost breakdown \
-          --path=. \
-          --terraform-plan-file=tfplan.out \
+          --path=plan.json \
           --format=json \
           --out-file=infracost-report.json
 
