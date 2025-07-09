@@ -97,9 +97,10 @@ jobs:
           --path=plan.json \
           --format=json \
           --out-file=infracost-report.json
+
       - name: Show Infracost report saved info
         run: echo "INFO: Infracost report saved to infracost-report.json"
-
+        
       # - name: Email Cost Estimate
       #   uses: dawidd6/action-send-mail@v3
       #   with:
