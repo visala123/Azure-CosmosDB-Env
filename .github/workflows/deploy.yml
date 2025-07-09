@@ -101,7 +101,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: infracost-report
-          path: infracost-report.json
+          #path: infracost-report.json
+          path: terraform/environments/${{ env.ENV }}/infracost-report.json
 
       - name: Show Infracost report saved info
         run: |
