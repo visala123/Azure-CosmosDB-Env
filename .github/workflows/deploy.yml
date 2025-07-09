@@ -22,12 +22,11 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ENV: ${{ github.event.inputs.environment }}
+       ENV: ${{ github.event.inputs.environment || 'dev' }}
 
     defaults:
       run:
-        working-directory: terraform/environments/${{ github.event.inputs.environment }}
-
+        working-directory: terraform/environments/${{ env.ENV }}
     outputs:
       tfplan-exists: ${{ steps.tfplan.outputs.plan_created }}
 
