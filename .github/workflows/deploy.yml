@@ -13,7 +13,7 @@ jobs:
     name: Terraform Plan and Apply
     runs-on: ubuntu-latest
 
-    environment: ${{ github.event.inputs.environment }}
+    #environment: ${{ github.event.inputs.environment }}
 
     env:
       ENV: ${{ github.event.inputs.environment }}
@@ -68,4 +68,6 @@ jobs:
           attachments: infracost-report.json
 
       - name: Terraform Apply (with approval for all environments)
+        environment: ${{ github.event.inputs.environment }}   
+        if: github.event.inputs.confirm_apply == 'yes'
         run: terraform apply -auto-approve tfplan.out
