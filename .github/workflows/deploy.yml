@@ -97,20 +97,22 @@ jobs:
           --path=plan.json \
           --format=json \
           --out-file=infracost-report.json
+      - name: Show Infracost report saved info
+        run: echo "INFO: Infracost report saved to infracost-report.json"
 
-      - name: Email Cost Estimate
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.office365.com
-          server_port: 587
-          username: ${{ secrets.EMAIL_USER }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Infracost Report - ${{ env.ENV }}"
-          to: prathyusha.y@algorims.com
-          from: GitHub Terraform CI
-          body: |
-            Please find the attached Infracost report for Cosmos DB - ${{ env.ENV }}.
-          attachments: infracost-report.json
+      # - name: Email Cost Estimate
+      #   uses: dawidd6/action-send-mail@v3
+      #   with:
+      #     server_address: smtp.office365.com
+      #     server_port: 587
+      #     username: ${{ secrets.EMAIL_USER }}
+      #     password: ${{ secrets.EMAIL_PASSWORD }}
+      #     subject: "Infracost Report - ${{ env.ENV }}"
+      #     to: prathyusha.y@algorims.com
+      #     from: GitHub Terraform CI
+      #     body: |
+      #       Please find the attached Infracost report for Cosmos DB - ${{ env.ENV }}.
+      #     attachments: infracost-report.json
 
   apply:
     name: Terraform Apply with Approval
