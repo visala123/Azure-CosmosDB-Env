@@ -58,7 +58,7 @@ jobs:
           echo "plan_created=true" >> $GITHUB_OUTPUT
 
       - name: Setup Infracost
-        uses: infracost/setup-infracost@v2
+        uses: infracost/setup-infracost@v2.0.4
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
