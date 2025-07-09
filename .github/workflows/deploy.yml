@@ -54,7 +54,7 @@ jobs:
           echo "plan_created=true" >> $GITHUB_OUTPUT
 
       - name: Generate Cost Estimate with Infracost
-        uses: infracost/actions@v2
+        uses: infracost/actions@vv2.1.3 
         with:
           path: terraform/environments/${{ env.ENV }}
           terraform_plan_file: tfplan.out
