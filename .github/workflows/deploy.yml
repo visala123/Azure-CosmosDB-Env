@@ -7,13 +7,15 @@ on:
         description: "Target environment (dev or prod)"
         required: true
         default: "dev"
+      confirm_apply:
+        description: "Type 'yes' to apply resources"
+        required: true
+        default: "no"
 
 jobs:
-  terraform:
-    name: Terraform Plan and Apply
+  plan:
+    name: Terraform Plan and Cost Estimate
     runs-on: ubuntu-latest
-
-    #environment: ${{ github.event.inputs.environment }}
 
     env:
       ENV: ${{ github.event.inputs.environment }}
@@ -21,6 +23,9 @@ jobs:
     defaults:
       run:
         working-directory: terraform/environments/${{ github.event.inputs.environment }}
+
+    outputs:
+      tfplan-exists: ${{ steps.tfplan.outputs.plan_created }}
 
     steps:
       - name: Checkout code
@@ -43,7 +48,10 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars" -out=tfplan.out
+        id: tfplan
+        run: |
+          terraform plan -var-file="terraform.tfvars" -out=tfplan.out
+          echo "plan_created=true" >> $GITHUB_OUTPUT
 
       - name: Generate Cost Estimate with Infracost
         uses: infracost/actions@v2
@@ -67,7 +75,35 @@ jobs:
             Please find the attached cost estimation for the Cosmos DB infrastructure changes.
           attachments: infracost-report.json
 
-      - name: Terraform Apply (with approval for all environments)
-        environment: ${{ github.event.inputs.environment }}   
-        if: github.event.inputs.confirm_apply == 'yes'
+  apply:
+    name: Terraform Apply
+    needs: plan
+    runs-on: ubuntu-latest
+
+    if: github.event.inputs.confirm_apply == 'yes'
+
+    environment: ${{ github.event.inputs.environment }}
+
+    defaults:
+      run:
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: terraform init -backend-config=backend.tf
+
+      - name: Terraform Apply (with GitHub Environment approval)
         run: terraform apply -auto-approve tfplan.out
