@@ -1,6 +1,10 @@
 name: Terraform CosmosDB CI/CD
 
 on:
+  push:
+    branches:
+      - stage
+      - main
   workflow_dispatch:
     inputs:
       environment:
@@ -18,12 +22,11 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ENV: ${{ github.event.inputs.environment }}
+       ENV: ${{ github.event.inputs.environment || 'dev' }}
 
     defaults:
       run:
-        working-directory: terraform/environments/${{ github.event.inputs.environment }}
-
+        working-directory: terraform/environments/${{ env.ENV }}
     outputs:
       tfplan-exists: ${{ steps.tfplan.outputs.plan_created }}
 
@@ -36,52 +39,98 @@ jobs:
         with:
           terraform_version: 1.6.6
 
+      # - name: Azure Login
+      #   uses: azure/login@v2
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Export ARM environment variables
+        run: |
+          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
+
       - name: Terraform Init
-        run: terraform init -backend-config=backend.tf
+        run: terraform init #-backend-config=backend.tf
 
       - name: Terraform Validate
         run: terraform validate
 
+      # - name: Terraform Plan
+      #   id: tfplan
+      #   run: |
+      #     terraform plan -var-file="terraform.tfvars" -out=tfplan.out
+      #     echo "plan_created=true" >> $GITHUB_OUTPUT
+
+      # - name: Setup Infracost
+      #   uses: infracost/actions/setup@v2.1.0
+      #   with:
+      #     api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      # - name: Run Infracost Breakdown
+      #   run: |
+      #     infracost breakdown \
+      #     --path=. \
+      #     --terraform-plan-file=tfplan.out \
+      #     --format=json \
+      #     --out-file=infracost-report.json
       - name: Terraform Plan
         id: tfplan
         run: |
-          terraform plan -var-file="terraform.tfvars" -out=tfplan.out
+          terraform plan -var-file="terraform.tfvars" -out=tfplan.binary
+          terraform show -json tfplan.binary > plan.json
           echo "plan_created=true" >> $GITHUB_OUTPUT
-
-      - name: Generate Cost Estimate with Infracost
-        uses: infracost/actions@v2.1.3 
+      
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v2.1.0
         with:
-          path: terraform/environments/${{ env.ENV }}
-          terraform_plan_file: tfplan.out
-          terraform_workspace: ${{ env.ENV }}
-          infracost_api_key: ${{ secrets.INFRACOST_API_KEY }}
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
 
-      - name: Email Cost Estimate
-        uses: dawidd6/action-send-mail@v3
+      - name: Run Infracost Breakdown
+        run: |
+          infracost breakdown \
+          --path=plan.json \
+          --format=table \
+          --out-file=infracost-report.txt
+      - name: Upload Infracost Report artifact
+        uses: actions/upload-artifact@v4
         with:
-          server_address: smtp.office365.com
-          server_port: 587
-          username: ${{ secrets.EMAIL_USER }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Infracost Report for Cosmos DB - ${{ env.ENV }}"
-          to: prathyusha.y@algorims.com
-          from: GitHub Terraform CI
-          body: |
-            Please find the attached cost estimation for the Cosmos DB infrastructure changes.
-          attachments: infracost-report.json
+          name: infracost-report
+          #path: infracost-report.json
+          path: terraform/environments/${{ env.ENV }}/infracost-report.txt
+
+      - name: Show Infracost report saved info
+        run: |
+          echo "INFO: Infracost cost breakdown report:"
+          cat infracost-report.txt
+
+      # - name: Email Cost Estimate
+      #   uses: dawidd6/action-send-mail@v3
+      #   with:
+      #     server_address: smtp.office365.com
+      #     server_port: 587
+      #     username: ${{ secrets.EMAIL_USER }}
+      #     password: ${{ secrets.EMAIL_PASSWORD }}
+      #     subject: "Infracost Report - ${{ env.ENV }}"
+      #     to: prathyusha.y@algorims.com
+      #     from: GitHub Terraform CI
+      #     body: |
+      #       Please find the attached Infracost report for Cosmos DB - ${{ env.ENV }}.
+      #     attachments: infracost-report.json
 
   apply:
-    name: Terraform Apply
+    name: Terraform Apply with Approval
     needs: plan
     runs-on: ubuntu-latest
 
     if: github.event.inputs.confirm_apply == 'yes'
 
+    # ✅ GitHub Environments must be created as 'dev' and 'prod'
     environment: ${{ github.event.inputs.environment }}
 
     defaults:
@@ -97,13 +146,24 @@ jobs:
         with:
           terraform_version: 1.6.6
 
+      # - name: Azure Login
+      #   uses: azure/login@v2
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Terraform Init
-        run: terraform init -backend-config=backend.tf
+      - name: Export ARM environment variables
+        run: |
+          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
-      - name: Terraform Apply (with GitHub Environment approval)
+      - name: Terraform Init
+        run: terraform init   #-backend-config=backend.tf
+
+      - name: Terraform Apply (waits for GitHub Environment approval)
         run: terraform apply -auto-approve tfplan.out
