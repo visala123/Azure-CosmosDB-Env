@@ -106,7 +106,8 @@ jobs:
 
       - name: Show Infracost report saved info
         run: |
-          echo "INFO: Infracost report saved to infracost-report.txt"
+          echo "INFO: Infracost cost breakdown report:"
+          cat infracost-report.txt
 
       # - name: Email Cost Estimate
       #   uses: dawidd6/action-send-mail@v3
