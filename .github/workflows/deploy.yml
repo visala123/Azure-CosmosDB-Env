@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - stage
-      #- main
   workflow_dispatch:
     inputs:
       environment:
@@ -22,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-       ENV: ${{ github.event.inputs.environment || 'dev' }}
+      ENV: ${{ github.event.inputs.environment || 'dev' }}
 
     defaults:
       run:
@@ -39,10 +38,6 @@ jobs:
         with:
           terraform_version: 1.6.6
 
-      # - name: Azure Login
-      #   uses: azure/login@v2
-      #   with:
-      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -56,40 +51,11 @@ jobs:
           echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
       - name: Terraform Init
-        run: terraform init #-backend-config=backend.tf
+        run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
 
-      # - name: Terraform Plan
-      #   id: tfplan
-      #   run: |
-      #     terraform plan -var-file="terraform.tfvars" -out=tfplan.out
-      #     echo "plan_created=true" >> $GITHUB_OUTPUT
-
-      # - name: Setup Infracost
-      #   uses: infracost/actions/setup@v2.1.0
-      #   with:
-      #     api-key: ${{ secrets.INFRACOST_API_KEY }}
-
-      # - name: Run Infracost Breakdown
-      #   run: |
-      #     infracost breakdown \
-      #     --path=. \
-      #     --terraform-plan-file=tfplan.out \
-      #     --format=json \
-      #     --out-file=infracost-report.json
-      # - name: Terraform Plan
-      #   id: tfplan
-      #   run: |
-      #     terraform plan -var-file="terraform.tfvars" -out=tfplan.binary
-      #     terraform show -json tfplan.binary > plan.json
-      #     echo "plan_created=true" >> $GITHUB_OUTPUT
-      # - name: Upload Terraform Plan (JSON) for Infracost and Apply
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: tfplan-json
-      #     path: plan.json
       - name: Terraform Plan
         id: tfplan
         run: |
@@ -104,53 +70,37 @@ jobs:
           path: |
             terraform/environments/${{ env.ENV }}/tfplan.binary
             terraform/environments/${{ env.ENV }}/plan.json
-      
+
       - name: Setup Infracost
         uses: infracost/actions/setup@v2.1.0
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
-      - name: Run Infracost Breakdown
+      - name: Run Infracost Breakdown with Usage
         run: |
           infracost breakdown \
-          --path=plan.json \
-          --format=table \
-          --out-file=infracost-report.txt
+            --path=plan.json \
+            --usage-file=infracost-usage.yml \
+            --format=table \
+            --out-file=infracost-report.txt
+
       - name: Upload Infracost Report artifact
         uses: actions/upload-artifact@v4
         with:
           name: infracost-report
-          #path: infracost-report.json
           path: terraform/environments/${{ env.ENV }}/infracost-report.txt
 
-      - name: Show Infracost report saved info
+      - name: Show Infracost report
         run: |
           echo "INFO: Infracost cost breakdown report:"
-          cat infracost-report.txt
-
-      # - name: Email Cost Estimate
-      #   uses: dawidd6/action-send-mail@v3
-      #   with:
-      #     server_address: smtp.office365.com
-      #     server_port: 587
-      #     username: ${{ secrets.EMAIL_USER }}
-      #     password: ${{ secrets.EMAIL_PASSWORD }}
-      #     subject: "Infracost Report - ${{ env.ENV }}"
-      #     to: prathyusha.y@algorims.com
-      #     from: GitHub Terraform CI
-      #     body: |
-      #       Please find the attached Infracost report for Cosmos DB - ${{ env.ENV }}.
-      #     attachments: infracost-report.json
+          cat terraform/environments/${{ env.ENV }}/infracost-report.txt
 
   apply:
     name: Terraform Apply with Approval
     needs: plan
     runs-on: ubuntu-latest
-
-    #if: github.event.inputs.confirm_apply == 'yes'
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_apply == 'yes'
 
-    # ✅ GitHub Environments must be created as 'dev' and 'prod'
     environment: ${{ github.event.inputs.environment }}
 
     defaults:
@@ -166,10 +116,6 @@ jobs:
         with:
           terraform_version: 1.6.6
 
-      # - name: Azure Login
-      #   uses: azure/login@v2
-      #   with:
-      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -189,7 +135,7 @@ jobs:
           path: terraform/environments/${{ github.event.inputs.environment }}
 
       - name: Terraform Init
-        run: terraform init   #-backend-config=backend.tf
+        run: terraform init
 
       - name: Terraform Apply (waits for GitHub Environment approval)
         run: terraform apply -auto-approve tfplan.binary
