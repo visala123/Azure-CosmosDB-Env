@@ -82,7 +82,7 @@ jobs:
             --path=plan.json \
             --usage-file=infracost-usage.yml \
             --format=table \
-            --out-file=infracost-report.txt
+            --out-file=terraform/environments/${{ env.ENV }}/infracost-report.txt
 
       - name: Upload Infracost Report artifact
         uses: actions/upload-artifact@v4
