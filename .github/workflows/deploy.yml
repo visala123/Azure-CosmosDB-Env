@@ -95,18 +95,18 @@ jobs:
         run: |
           infracost breakdown \
           --path=plan.json \
-          --format=json \
-          --out-file=infracost-report.json
+          --format=table \
+          --out-file=infracost-report.txt
       - name: Upload Infracost Report artifact
         uses: actions/upload-artifact@v4
         with:
           name: infracost-report
           #path: infracost-report.json
-          path: terraform/environments/${{ env.ENV }}/infracost-report.json
+          path: terraform/environments/${{ env.ENV }}/infracost-report.txt
 
       - name: Show Infracost report saved info
         run: |
-          echo "INFO: Infracost report saved to infracost-report.json"
+          echo "INFO: Infracost report saved to infracost-report.txt"
 
       # - name: Email Cost Estimate
       #   uses: dawidd6/action-send-mail@v3
