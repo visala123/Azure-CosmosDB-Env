@@ -85,6 +85,11 @@ jobs:
           terraform plan -var-file="terraform.tfvars" -out=tfplan.binary
           terraform show -json tfplan.binary > plan.json
           echo "plan_created=true" >> $GITHUB_OUTPUT
+      - name: Upload Terraform plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan.out
       
       - name: Setup Infracost
         uses: infracost/actions/setup@v2.1.0
@@ -124,7 +129,11 @@ jobs:
       #     attachments: infracost-report.json
 
   apply:
-    name: Terraform Apply with Approval
+  - name: Download Terraform plan artifact
+    uses: actions/download-artifact@v4
+    with:
+          name: tfplan
+          name: Terraform Apply with Approval
     needs: plan
     runs-on: ubuntu-latest
 
