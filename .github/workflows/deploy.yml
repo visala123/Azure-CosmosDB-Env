@@ -128,7 +128,8 @@ jobs:
     needs: plan
     runs-on: ubuntu-latest
 
-    if: github.event.inputs.confirm_apply == 'yes'
+    #if: github.event.inputs.confirm_apply == 'yes'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_apply == 'yes'
 
     # ✅ GitHub Environments must be created as 'dev' and 'prod'
     environment: ${{ github.event.inputs.environment }}
