@@ -1,37 +1,19 @@
-variable "resource_group_name" {
-  type = string
-}
+variable "resource_group_name" {}
+variable "location" {}
+variable "account_name" {}
+variable "offer_type" {}
+variable "kind" {}
+variable "automatic_failover_enabled" { type = bool }
+variable "capabilities" { type = list(string) }
+variable "consistency_level" {}
+variable "max_interval_in_seconds" { type = number }
+variable "max_staleness_prefix" { type = number }
 
-variable "location" {
-  type = string
-}
-
-variable "account_name" {
-  type = string
-}
-
-variable "offer_type" {
-  type = string
-}
-
-variable "kind" {
-  type = string
-}
-
-variable "consistency_level" {
-  type = string
-}
-
-variable "failover_priority" {
-  type = number
-}
-
-variable "capabilities" {
-  type = list(string)
-}
-
-variable "enable_free_tier" {
-  type = bool
+variable "geo_locations" {
+  type = list(object({
+    location          = string
+    failover_priority = number
+  }))
 }
 
 variable "tags" {

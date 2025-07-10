@@ -1,4 +1,4 @@
-resource "azurerm_resource_group" "cosmosdb" {
+resource "azurerm_resource_group" "cosmosdb_rg" {
   name     = var.resource_group_name
   location = var.location
 }
@@ -6,18 +6,11 @@ resource "azurerm_resource_group" "cosmosdb" {
 resource "azurerm_cosmosdb_account" "cosmosdb" {
   name                = var.account_name
   location            = var.location
-  resource_group_name = azurerm_resource_group.cosmosdb.name
+  resource_group_name = azurerm_resource_group.cosmosdb_rg.name
   offer_type          = var.offer_type
   kind                = var.kind
 
-  consistency_policy {
-    consistency_level = var.consistency_level
-  }
-
-  geo_location {
-    location          = var.location
-    failover_priority = var.failover_priority
-  }
+  automatic_failover_enabled = var.automatic_failover_enabled
 
   dynamic "capabilities" {
     for_each = var.capabilities
@@ -26,6 +19,19 @@ resource "azurerm_cosmosdb_account" "cosmosdb" {
     }
   }
 
-  #enable_free_tier = var.enable_free_tier
-  tags             = var.tags
+  consistency_policy {
+    consistency_level       = var.consistency_level
+    max_interval_in_seconds = var.max_interval_in_seconds
+    max_staleness_prefix    = var.max_staleness_prefix
+  }
+
+  dynamic "geo_location" {
+    for_each = var.geo_locations
+    content {
+      location          = geo_location.value.location
+      failover_priority = geo_location.value.failover_priority
+    }
+  }
+
+  tags = var.tags
 }
