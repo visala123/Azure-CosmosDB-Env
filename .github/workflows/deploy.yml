@@ -102,8 +102,8 @@ jobs:
         with:
           name: tfplan-files
           path: |
-            tfplan.binary
-            plan.json
+            terraform/environments/${{ env.ENV }}/tfplan.binary
+            terraform/environments/${{ env.ENV }}/plan.json
       
       - name: Setup Infracost
         uses: infracost/actions/setup@v2.1.0
@@ -186,7 +186,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan-files
-          path: .
+          path: terraform/environments/${{ github.event.inputs.environment }}
 
       - name: Terraform Init
         run: terraform init   #-backend-config=backend.tf
