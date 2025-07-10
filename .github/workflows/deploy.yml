@@ -79,17 +79,31 @@ jobs:
       #     --terraform-plan-file=tfplan.out \
       #     --format=json \
       #     --out-file=infracost-report.json
+      # - name: Terraform Plan
+      #   id: tfplan
+      #   run: |
+      #     terraform plan -var-file="terraform.tfvars" -out=tfplan.binary
+      #     terraform show -json tfplan.binary > plan.json
+      #     echo "plan_created=true" >> $GITHUB_OUTPUT
+      # - name: Upload Terraform Plan (JSON) for Infracost and Apply
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: tfplan-json
+      #     path: plan.json
       - name: Terraform Plan
         id: tfplan
         run: |
           terraform plan -var-file="terraform.tfvars" -out=tfplan.binary
           terraform show -json tfplan.binary > plan.json
           echo "plan_created=true" >> $GITHUB_OUTPUT
-      - name: Upload Terraform Plan (JSON) for Infracost and Apply
+
+      - name: Upload Terraform Plan Files
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan-json
-          path: plan.json
+          name: tfplan-files
+          path: |
+            tfplan.binary
+            plan.json
       
       - name: Setup Infracost
         uses: infracost/actions/setup@v2.1.0
@@ -168,10 +182,10 @@ jobs:
           echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
           echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
-      - name: Download Terraform plan artifact
+      - name: Download Terraform plan files
         uses: actions/download-artifact@v4
         with:
-          name: tfplan-json
+          name: tfplan-files
 
       - name: Terraform Init
         run: terraform init   #-backend-config=backend.tf
