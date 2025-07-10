@@ -82,18 +82,18 @@ jobs:
             --path=plan.json \
             --usage-file=infracost-usage.yml \
             --format=table \
-            --out-file=terraform/environments/${{ env.ENV }}/infracost-report.txt
+            --out-file=infracost-report.txt
 
       - name: Upload Infracost Report artifact
         uses: actions/upload-artifact@v4
         with:
           name: infracost-report
-          path: terraform/environments/${{ env.ENV }}/infracost-report.txt
+          path: infracost-report.txt
 
       - name: Show Infracost report
         run: |
           echo "INFO: Infracost cost breakdown report:"
-          cat terraform/environments/${{ env.ENV }}/infracost-report.txt
+          cat infracost-report.txt
 
   apply:
     name: Terraform Apply with Approval
