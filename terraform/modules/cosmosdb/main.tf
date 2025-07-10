@@ -1,4 +1,4 @@
-resource "azurerm_resource_group" "cosmosbd_rg" {
+resource "azurerm_resource_group" "cosmosbd" {
   name     = var.resource_group_name
   location = var.location
 }
@@ -6,7 +6,7 @@ resource "azurerm_resource_group" "cosmosbd_rg" {
 resource "azurerm_cosmosdb_account" "cosmosdb" {
   name                = var.account_name
   location            = var.location
-  resource_group_name = azurerm_resource_group.cosmosdb_rg.name
+  resource_group_name = azurerm_resource_group.cosmosdb.name
   offer_type          = var.offer_type
   kind                = var.kind
 
