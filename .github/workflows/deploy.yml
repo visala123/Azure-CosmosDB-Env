@@ -129,25 +129,25 @@ jobs:
       #     attachments: infracost-report.json
 
   apply:
-  - name: Download Terraform plan artifact
-    uses: actions/download-artifact@v4
-    with:
+    - name: Download Terraform plan artifact
+      uses: actions/download-artifact@v4
+      with:
           name: tfplan
           name: Terraform Apply with Approval
-    needs: plan
-    runs-on: ubuntu-latest
+      needs: plan
+      runs-on: ubuntu-latest
 
     #if: github.event.inputs.confirm_apply == 'yes'
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_apply == 'yes'
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_apply == 'yes'
 
     # ✅ GitHub Environments must be created as 'dev' and 'prod'
-    environment: ${{ github.event.inputs.environment }}
+      environment: ${{ github.event.inputs.environment }}
 
-    defaults:
+      defaults:
       run:
         working-directory: terraform/environments/${{ github.event.inputs.environment }}
 
-    steps:
+      steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
