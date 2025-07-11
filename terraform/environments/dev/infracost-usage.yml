@@ -1,7 +1,7 @@
 version: 0.1
 
 resource_usage:
-  azurerm_cosmosdb_account.cosmosdb:
+  modules.cosmosdb.azurerm_cosmosdb_account.cosmosdb:
     kind: "MongoDB"
     throughput: 400                        # Replace with your RU/s
     monthly_read_operations: 1000000      # Approximate usage
