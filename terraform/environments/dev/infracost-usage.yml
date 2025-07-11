@@ -1,0 +1,10 @@
+version: 0.1
+
+resource_usage:
+  azurerm_cosmosdb_account.cosmosdb:
+    kind: "MongoDB"
+    throughput: 400                        # Replace with your RU/s
+    monthly_read_operations: 1000000      # Approximate usage
+    monthly_write_operations: 500000      # Approximate usage
+    monthly_storage_gb: 10                # Estimated data stored
+    geo_location_count: 2    
